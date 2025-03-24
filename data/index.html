@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>ESP8266 Web Server</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="icon" href="data:,">
+        <link rel="stylesheet" type="text/css" href="style.css">
+        <script type="text/javascript" src="main.js"></script>
+    </head>
+    <body>
+        <div id="main-div">
+            <h1 id="title">ESP8266 Web Server</h1>
+            <div id="buttons-div">
+                <div id="main-toggle-div" onclick="handle_click('main-toggle')">
+                    <table>
+                        <tr style="vertical-align: bottom;">
+                            <td id="label-box">
+                                Main output enable
+                            </td>
+                            <td>
+                                <input type="checkbox" id="main-output-checkbox" name="main-output-checkbox"/>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- <div id="timer-div" onclick="handle_click('timer-toggle)"> -->
+                <!--     <table> -->
+                <!--         <tr style="vertical-align: bottom;"> -->
+                <!--             <td id="label-box"> -->
+                <!--                 Timer enabled -->
+                <!--             </td> -->
+                <!--             <td> -->
+                <!--                 <input type="checkbox" id="timer-checkbox" name="timer-checkbox"/> -->
+                <!--             </td> -->
+                <!--         </tr> -->
+                <!--     </table> -->
+                <!-- </div> -->
+            </div>
+
+            <div id="info-div">
+                <table style="width: 100%; padding: 1em;">
+                    <tr>
+                        <td style="text-align: left;">
+                            WiFi SSID
+                        </td>
+                        <td style="text-align: right;">
+                            <div id="wifi-ssid" style="font-family: monospace;"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: left;">
+                            WiFi Strength
+                        </td>
+                        <td style="text-align: right;">
+                            <div id="wifi-rssi" style="font-family: monospace;"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: left;">
+                            Local domain
+                        </td>
+                        <td style="text-align: right;">
+                            <a id="system-local-domain" style="font-family: monospace;"></a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: left;">
+                            Local IP address
+                        </td>
+                        <td style="text-align: right;">
+                            <a id="system-ip-addr" style="font-family: monospace;"></a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: left;">
+                            System time
+                        </td>
+                        <td style="text-align: right;">
+                            <div id="system-time" style="font-family: monospace;"></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </body>
+</html>

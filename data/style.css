@@ -1,0 +1,95 @@
+body {
+    color: black;
+    background-color: white;
+    margin: 3em auto 3em auto;
+    text-align: center;
+    font-family: "Nimbus Sans", "Nimbus Sans L", "Helvetica", Inter;
+    font-size: 18px;
+}
+
+#title {
+    padding: 0em 0.5em 0em 0.5em;
+}
+
+#main-div {
+    max-width: 25em;
+    min-height: 85vh;
+    margin: auto auto;
+    border-radius: 10px;
+}
+
+#main-toggle-div {
+    cursor: pointer;
+    user-select: none;
+    /* padding: 1em 0em 1em 0em; */
+    padding: 1.20em 1.70em 1em 1.70em;
+}
+
+#buttons-div {
+    text-align: left;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 14px;
+    border: 1px solid #BCCCDC;
+}
+
+#label-box {
+    width: 100%;
+    font-size: 20px;
+}
+
+#main-output-checkbox, #timer-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    margin: 0;
+    padding: 0;
+}
+
+#timer-div {
+    padding-top: 0.5em;
+    padding: 0.5em 1.70em 1em 1.70em;
+    cursor: pointer;
+    user-select: none;
+}
+
+#info-div {
+    padding-top: .5em;
+    font-size: 16px;
+}
+
+a, a:visited {
+    color: #00E;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        color: #E2E2E2;
+        background-color: #202020;
+    }
+    a, a:visited {
+        color: #56C8FF;
+    }
+    #main-toggle-div {
+        border-color: #E2E2E2;
+    }
+    #main-output-checkbox, #timer-checkbox {
+        appearance: none;
+        background-color: #E2E2E2;
+        border-radius: 2px;
+        margin-bottom: -1px;
+        /* margin: 0; */
+        /* padding: 0; */
+        /* width: 20px; */
+        /* height: 20px; */
+    }
+
+    #main-output-checkbox:checked, #timer-checkbox:checked {
+        appearance: revert;
+        accent-color: #56C8FF;
+        /* margin-bottom: 1px; */
+        /* padding: 0; */
+        /* width: 20px; */
+        /* height: 20px; */
+    }
+}

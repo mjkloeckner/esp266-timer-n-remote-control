@@ -9,33 +9,57 @@
     </head>
     <body>
         <div id="main-div">
-            <h1 id="title">ESP8266 Web Server</h1>
+            <h1 id="title">ESP8266 Remote Panel</h1>
             <div id="buttons-div">
                 <div id="main-toggle-div" onclick="handle_click('main-toggle')">
                     <table>
                         <tr style="vertical-align: bottom;">
                             <td id="label-box">
-                                Main output enable
+                                Main output enabled
                             </td>
                             <td>
-                                <input type="checkbox" id="main-output-checkbox" name="main-output-checkbox"/>
+                                <input type="checkbox" id="main-output-checkbox"/>
                             </td>
                         </tr>
                     </table>
                 </div>
-
-                <!-- <div id="timer-div" onclick="handle_click('timer-toggle)"> -->
-                <!--     <table> -->
-                <!--         <tr style="vertical-align: bottom;"> -->
-                <!--             <td id="label-box"> -->
-                <!--                 Timer enabled -->
-                <!--             </td> -->
-                <!--             <td> -->
-                <!--                 <input type="checkbox" id="timer-checkbox" name="timer-checkbox"/> -->
-                <!--             </td> -->
-                <!--         </tr> -->
-                <!--     </table> -->
-                <!-- </div> -->
+                <div id="timer-div">
+                    <table>
+                        <tr id="timer-div2"  onclick="handle_click('timer-toggle)">
+                            <td id="label-box" style="padding: 0 0 .65em 0;">
+                                Timer enabled
+                            </td>
+                            <td style="text-align: right; padding: 0 0 .65em 0;">
+                                <input type="checkbox" id="timer-checkbox"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.85em 0 .25em 0;">
+                                From
+                            </td>
+                            <td style="padding: 0.85em 0 .25em 0;">
+                                <input id="from-time" type="time" value="18:00"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Until
+                            </td>
+                            <td>
+                                <input id="to-time" type="time" value="00:00"/>
+                            </td>
+                        </tr>
+                        <!-- <tr> -->
+                        <!--     <td> -->
+                        <!--     </td> -->
+                        <!--     <td> -->
+                        <!--         <div id="save-timer-button"> -->
+                        <!--             save -->
+                        <!--         </div> -->
+                        <!--     </td> -->
+                        <!-- </tr> -->
+                    </table>
+                </div>
             </div>
 
             <div id="info-div">

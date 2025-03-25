@@ -200,9 +200,7 @@ void setup_websocket() {
     web_socket.onEvent(webp_socket_event);
 }
 
-String webserver_get_file(String path) {
-    String return_page;
-
+int webserver_get_file(String path, String &return_page) {
     if(LittleFS.exists(path)) {
         Serial.printf("[SERVER] Serving file '%s'\n", path.c_str());
         File file = LittleFS.open(path.c_str(), "r");
@@ -223,8 +221,9 @@ String webserver_get_file(String path) {
               <p>file '/index.html' not found</p>
           </body>
         </html>)==";
+        return 1;
     }
-    return return_page;
+    return 0;
 }
 
 String webserver_file_content_type(String path) {
@@ -238,12 +237,22 @@ String webserver_file_content_type(String path) {
 
 void webserver_file_handler() {
     String path = server.uri();
-    server.send(200, webserver_file_content_type(path), webserver_get_file(path));
+    String requested_page;
+    int response_code;
+    response_code = 200;
+    if(webserver_get_file(path, requested_page)) {
+        response_code = 404;
+    }
+    server.send(response_code, webserver_file_content_type(path), requested_page);
 }
 
 void webserver_handle_root() {
-    String webp_index = webserver_get_file("index.html");
-    server.send(200, "text/html", webp_index.c_str());
+    String index_page;
+    int response_code = 200;
+    if(webserver_get_file("index.html", index_page)) {
+        response_code = 404;
+    }
+    server.send(response_code, "text/html", index_page.c_str());
 }
 
 void setup_webserver() {

@@ -15,7 +15,7 @@ WebSocketsServer web_socket = WebSocketsServer(81);
 JSONVar data, system_time_data;
 WiFiUDP ntpUDP;
 
-NTPClient system_time(ntpUDP, "pool.ntp.org", 0, 3600); // UTC Time
+NTPClient system_time(ntpUDP, "pool.ntp.org", 0, 3600*1000); // UTC Time
 
 #define REMOTE_LED_PIN LED_BUILTIN
 #define MAIN_OUTPUT_PIN 5

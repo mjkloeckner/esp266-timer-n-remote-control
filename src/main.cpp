@@ -4,8 +4,6 @@
 #include <ESP8266mDNS.h>
 #include <LittleFS.h>
 #include <Arduino_JSON.h>
-#include <NTPClient.h>
-#include <WiFiUdp.h>
 
 uint8_t remote_devices = 0, main_output_enabled = 0;
 uint32_t t = 0, dt = 0, main_output_dt = 0;
@@ -13,9 +11,8 @@ uint32_t t = 0, dt = 0, main_output_dt = 0;
 ESP8266WebServer server(80);
 WebSocketsServer web_socket = WebSocketsServer(81);
 JSONVar data, system_time_data;
-WiFiUDP ntpUDP;
-
-NTPClient system_time(ntpUDP, "pool.ntp.org", 0, 3600*1000); // UTC Time
+#include <time.h>
+#include <coredecls.h> // settimeofday_cb() callback
 
 #define REMOTE_LED_PIN LED_BUILTIN
 #define MAIN_OUTPUT_PIN 5
@@ -26,8 +23,13 @@ NTPClient system_time(ntpUDP, "pool.ntp.org", 0, 3600*1000); // UTC Time
 #define WIFI_PASSWD "12345678"
 #define MDNS_DOMAIN "esp8266"
 
+#define MY_NTP_SERVER "pool.ntp.org"
+#define MY_TZ "<-03>3"
+
 #define MAIN_SWITCH_REPEAT_TIME 200
 
+time_t system_time, last_ntp_sync;
+tm tm;
 void webp_socket_event(uint8_t, WStype_t, uint8_t *, size_t);
 void webp_handler();
 
@@ -40,6 +42,32 @@ void setup_webserver();
 void setup_mdns();
 void setup_fs();
 
+void show_time(bool from_sntp = false) {
+    time(&system_time);              // read the current time
+    localtime_r(&system_time, &tm);  // update the structure tm with the current time
+
+    const char* prompt = from_sntp ? "[SNTP]" : "[LOOP]";
+
+    if(from_sntp) {
+        time(&last_ntp_sync);
+    }
+
+    // YYYY-MM-DD HH:MM:SS GMT-3
+    Serial.printf("%s %d-%02d-%02d %02d:%02d:%02d GMT-3\n", prompt,
+            tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+}
+
+// ntp startup delay
+uint32_t sntp_startup_delay_MS_rfc_not_less_than_60000 () {
+    randomSeed(A0);
+    return random(5000);
+}
+
+// ntp polling interval
+uint32_t sntp_update_delay_MS_rfc_not_less_than_15000 () {
+    return 8 * 60 * 60 * 1000UL; // 60 mins
+}
+
 void setup() {
     pinMode(REMOTE_LED_PIN, OUTPUT);
     pinMode(MAIN_OUTPUT_PIN, OUTPUT);
@@ -50,7 +78,6 @@ void setup() {
     digitalWrite(MAIN_OUTPUT_PIN, LOW);
     digitalWrite(SETUP_COMPLETE_OUTPUT_PIN, LOW);
 
-    // Serial.begin(921600);
     Serial.begin(115200);
     Serial.setDebugOutput(false);
     Serial.printf("\n\n\n");
@@ -69,7 +96,9 @@ void setup() {
     setup_websocket();
     setup_mdns();
     setup_webserver();
-    system_time.begin();
+    configTime(MY_TZ, MY_NTP_SERVER); // Here is the IMPORTANT ONE LINER needed in your sketch!
+    settimeofday_cb(show_time);       // ntp update callback
+    show_time();
     digitalWrite(SETUP_COMPLETE_OUTPUT_PIN, HIGH);
 }
 
@@ -97,7 +126,12 @@ void loop() {
     MDNS.update();
     web_socket.loop();
     server.handleClient();
-    system_time.update();
+
+    // print system time every minute
+    if((t - clock_dt) > 60000){
+        clock_dt = millis();
+        show_time();
+    }
 }
 
 void setup_wifi() {
@@ -141,7 +175,8 @@ void update_data() {
     data["main-output-enabled"] = String(main_output_enabled);
     data["system-local-domain"] = String(MDNS_DOMAIN);
     data["system-ip-addr"] = WiFi.localIP().toString();
-    data["system-time"] = system_time.getEpochTime();
+    data["last-ntp-sync"] = (long)last_ntp_sync;
+    data["system-time"] = (long)system_time;
     data["wifi-ssid"] = WIFI_SSID;
     data["wifi-rssi"] = WiFi.RSSI();
 }

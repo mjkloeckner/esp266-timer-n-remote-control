@@ -187,6 +187,23 @@ void update_all_socket_clients() {
     web_socket.broadcastTXT(data_as_json);
 }
 
+void update_all_clients_checkbox() {
+    JSONVar output_data;
+    output_data["type"] = "cb";
+    output_data["main-output-enabled"] = String(main_output_enabled);
+    output_data["timer-enabled"] = String(timer_enabled);
+    String output_data_as_json = JSON.stringify(output_data);
+    web_socket.broadcastTXT(output_data_as_json);
+}
+
+
+typedef enum {
+    MAIN_OUTPUT_STATUS = 0,
+    MAIN_OUTPUT_TOGGLE,
+    TIMER_TOGGLE,
+    TIMER_SET_VALUES
+} query_t;
+
 void webp_socket_event(uint8_t num, WStype_t type, uint8_t *payload, size_t len) {
     switch(type) {
     case WStype_DISCONNECTED:
@@ -203,22 +220,24 @@ void webp_socket_event(uint8_t num, WStype_t type, uint8_t *payload, size_t len)
         }
         break;
     case WStype_TEXT: {
-            // Serial.printf("[SOCKET](%u) got text: %s\n", num, payload);
+            int query_type = *payload - '0';
 
-            if(!strcmp((char *)payload, "main-output-toggle")) {
+            switch(query_type) {
+            case MAIN_OUTPUT_TOGGLE:
                 main_output_toggle();
-                update_all_socket_clients();
-            }
-
-            if(!strcmp((char *)payload, "main-output-status")) {
+                update_all_clients_checkbox();
+                break;
+            case TIMER_TOGGLE:
+                timer_toggle();
+                update_all_clients_checkbox();
+                break;
+            case TIMER_SET_VALUES:
+            case MAIN_OUTPUT_STATUS:
+            default:
                 update_data();
                 String data_as_json = JSON.stringify(data);
                 web_socket.sendTXT(num, data_as_json);
-            }
-
-            if(!strcmp((char *)payload, "system-time")) {
-                String system_time_data_as_json = JSON.stringify(system_time_data);
-                web_socket.sendTXT(num, system_time_data_as_json);
+                break;
             }
         }
         break;

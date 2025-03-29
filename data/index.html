@@ -23,42 +23,52 @@
                         </tr>
                     </table>
                 </div>
-                <div id="timer-div">
-                    <table>
-                        <tr id="timer-div2"  onclick="handle_click('timer-toggle)">
-                            <td id="label-box" style="padding: 0 0 .65em 0;">
-                                Timer enabled
-                            </td>
-                            <td style="text-align: right; padding: 0 0 .65em 0;">
-                                <input type="checkbox" id="timer-checkbox"/>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 0.85em 0 .25em 0;">
-                                From
-                            </td>
-                            <td style="padding: 0.85em 0 .25em 0;">
-                                <input id="from-time" type="time" value="18:00"/>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                Until
-                            </td>
-                            <td>
-                                <input id="to-time" type="time" value="00:00"/>
-                            </td>
-                        </tr>
-                        <!-- <tr> -->
-                        <!--     <td> -->
-                        <!--     </td> -->
-                        <!--     <td> -->
-                        <!--         <div id="save-timer-button"> -->
-                        <!--             save -->
-                        <!--         </div> -->
-                        <!--     </td> -->
-                        <!-- </tr> -->
-                    </table>
+                <div id="timer">
+                    <div id="timer-enable" onclick="handle_click('timer-toggle')">
+                        <table>
+                            <tr>
+                                <td id="label-box">
+                                    Timer enabled
+                                </td>
+                                <td>
+                                    <input type="checkbox" id="timer-checkbox"/>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div id="timer-sep"></div>
+                    <div id="timer-picker">
+                        <table>
+                            <tr>
+                                <td>
+                                    From
+                                </td>
+                                <td>
+                                    <input id="from-time" type="time" value="18:00"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Until
+                                </td>
+                                <td>
+                                    <input id="to-time" type="time" value="00:00"/>
+                                </td>
+                            </tr>
+                            <!-- <tr> -->
+                            <!--     <td> -->
+                            <!--     </td> -->
+                            <!--     <td> -->
+                            <!--         <div id="save-timer-button"> -->
+                            <!--             save -->
+                            <!--         </div> -->
+                            <!--     </td> -->
+                            <!-- </tr> -->
+                        </table>
+                    </div>
+                    <div id="timer-save-div">
+                        <input type="button" value="Save" id="timer-save">
+                    </div>
                 </div>
             </div>
 
@@ -94,6 +104,14 @@
                         </td>
                         <td style="text-align: right;">
                             <a id="system-ip-addr" style="font-family: monospace;"></a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: left;">
+                            Last NTP sync
+                        </td>
+                        <td style="text-align: right;">
+                            <div id="last-ntp-sync" style="font-family: monospace;"></div>
                         </td>
                     </tr>
                     <tr>

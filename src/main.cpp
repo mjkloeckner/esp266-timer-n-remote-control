@@ -4,13 +4,6 @@
 #include <ESP8266mDNS.h>
 #include <LittleFS.h>
 #include <Arduino_JSON.h>
-
-uint8_t remote_devices = 0, main_output_enabled = 0;
-uint32_t t = 0, dt = 0, main_output_dt = 0;
-
-ESP8266WebServer server(80);
-WebSocketsServer web_socket = WebSocketsServer(81);
-JSONVar data, system_time_data;
 #include <time.h>
 #include <coredecls.h> // settimeofday_cb() callback
 
@@ -28,8 +21,14 @@ JSONVar data, system_time_data;
 
 #define MAIN_SWITCH_REPEAT_TIME 200
 
+ESP8266WebServer server(80);
+WebSocketsServer web_socket = WebSocketsServer(81);
+JSONVar data, system_time_data;
+
 time_t system_time, last_ntp_sync;
 tm tm;
+uint8_t remote_devices = 0, timer_enabled = 0, main_output_enabled = 0;
+
 void webp_socket_event(uint8_t, WStype_t, uint8_t *, size_t);
 void webp_handler();
 
@@ -84,7 +83,7 @@ void setup() {
     delay(1000);
 
     Serial.printf("[SETUP] Booting");
-    for(uint8_t t = 20; t > 0; t--) {
+    for(uint8_t t = 10; t > 0; t--) {
         Serial.print(".");
         Serial.flush();
         delay(150);
@@ -102,12 +101,13 @@ void setup() {
     digitalWrite(SETUP_COMPLETE_OUTPUT_PIN, HIGH);
 }
 
+uint32_t t = 0, clock_dt = 0, main_output_dt = 0;
 void loop() {
     t = millis();
 
-    if(digitalRead(MAIN_SWITCH_INPUT_PIN)) {
-        if((t - dt) > MAIN_SWITCH_REPEAT_TIME) {
-            dt = millis();
+    if((t - main_output_dt) > MAIN_SWITCH_REPEAT_TIME) {
+        if(digitalRead(MAIN_SWITCH_INPUT_PIN)) {
+            main_output_dt = millis();
             main_output_toggle();
             update_all_socket_clients();
         }
@@ -139,7 +139,7 @@ void setup_wifi() {
 
     Serial.printf("[SETUP] Connecting to WiFi");
     while(WiFi.status() != WL_CONNECTED) {
-        delay(200);
+        delay(100);
         Serial.print(".");
     }
     Serial.printf("\n[SETUP] Connected to '%s' IP address ", WIFI_SSID);
@@ -167,8 +167,8 @@ void main_output_toggle() {
     main_output_enabled = !main_output_enabled;
 }
 
-void query_system_time() {
-    system_time_data["system-time"] = system_time.getEpochTime();
+void timer_toggle() {
+    timer_enabled = !timer_enabled;
 }
 
 void update_data() {
@@ -274,10 +274,7 @@ void webserver_file_handler() {
     String path = server.uri();
     String requested_page;
     int response_code;
-    response_code = 200;
-    if(webserver_get_file(path, requested_page)) {
-        response_code = 404;
-    }
+    response_code = webserver_get_file(path, requested_page) ? 404 : 200;
     server.send(response_code, webserver_file_content_type(path), requested_page);
 }
 

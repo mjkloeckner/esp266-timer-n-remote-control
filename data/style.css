@@ -96,13 +96,11 @@ tr {
 #timer-save:active {
   background-color: #E3E3E3;
   border: none;
-  /* transform: translateY(1px); */
 }
 
 #timer-save:hover {
     border-color: black;
 }
-
 
 td {
     width: 100%;
@@ -163,9 +161,7 @@ h1 {
 
 @media (prefers-color-scheme: dark) {
     body {
-        /* color: #E2E2E2; */
         color: white;
-        /* background-color: #202020; */
         background-color: #17171A;
     }
     a, a:visited {
@@ -179,7 +175,6 @@ h1 {
     }
 
     #main-toggle-div, #timer {
-        /* background-color: #303033; */
         background-color: #232327;
         border: none;
     }
@@ -195,29 +190,15 @@ h1 {
         border: 1px solid #3E3E42;
     }
 
-    #timer-save:hover {
-        /* border: 1px solid #E3E3E3; */
-    }
-
     #timer-save:active {
         background-color: #3E3E42;
         border: none;
     }
 
-    /*
-    #main-output-checkbox, #timer-checkbox {
-        appearance: none;
-        background-color: #E2E2E2;
-        border-radius: 2px;
-        margin-bottom: -1px;
-        -webkit-margin-after: 0px;
-    }
-    */
-
     #main-output-checkbox:checked, #timer-checkbox:checked {
-        /* appearance: revert; */
         accent-color: #56C8FF;
     }
+
     #from-time, #to-time {
         background-color: #303033;
         color: white;

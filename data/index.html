@@ -14,11 +14,24 @@
                 <div id="main-toggle-div" onclick="handle_click('main-toggle')">
                     <table>
                         <tr style="vertical-align: bottom;">
-                            <td id="label-box">
+                            <td>
                                 Main output enabled
                             </td>
-                            <td>
-                                <input type="checkbox" id="main-output-checkbox"/>
+                            <td id="main-checkbox-td">
+                                <div id="main-checkbox" checked="">
+                                    <svg id="checkmark-svg"
+                                     version="1.0"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     viewBox="0 0 64.000000 64.000000"
+                                     preserveAspectRatio="xMidYMid meet">
+                                        <g transform="translate(0.000000,64.000000) scale(0.100000,-0.100000)"
+                                        fill="currentColor" stroke="currentColor">
+                                        <path d="M380 419 l-142 -211 -67 66 c-38 38 -75 66 -87 66 -25 0 -84 -60 -84
+                                        -86 0 -11 45 -65 113 -132 121 -121 145 -132 184 -89 49 54 343 502 343 523 0
+                                        27 -62 74 -96 74 -16 0 -53 -48 -164 -211z"/>
+                                        </g>
+                                    </svg>
+                                </div>
                             </td>
                         </tr>
                     </table>
@@ -27,11 +40,24 @@
                     <div id="timer-enable" onclick="handle_click('timer-toggle')">
                         <table>
                             <tr>
-                                <td id="label-box">
+                                <td>
                                     Timer enabled
                                 </td>
-                                <td>
-                                    <input type="checkbox" id="timer-checkbox"/>
+                                <td id="timer-checkbox-td">
+                                    <div id="timer-checkbox" checked="">
+                                        <svg id="checkmark-svg"
+                                         version="1.0"
+                                         xmlns="http://www.w3.org/2000/svg"
+                                         viewBox="0 0 64.000000 64.000000"
+                                         preserveAspectRatio="xMidYMid meet">
+                                            <g transform="translate(0.000000,64.000000) scale(0.100000,-0.100000)"
+                                            fill="currentColor" stroke="currentColor">
+                                            <path d="M380 419 l-142 -211 -67 66 c-38 38 -75 66 -87 66 -25 0 -84 -60 -84
+                                            -86 0 -11 45 -65 113 -132 121 -121 145 -132 184 -89 49 54 343 502 343 523 0
+                                            27 -62 74 -96 74 -16 0 -53 -48 -164 -211z"/>
+                                            </g>
+                                        </svg>
+                                    </div>
                                 </td>
                             </tr>
                         </table>
@@ -66,51 +92,51 @@
             <div id="info-div">
                 <table style="width: 100%; padding: 1em;">
                     <tr>
-                        <td style="text-align: left;">
+                        <td>
                             WiFi SSID
                         </td>
-                        <td style="text-align: right;">
-                            <div id="wifi-ssid" style="font-family: monospace;"></div>
+                        <td>
+                            <div id="wifi-ssid"></div>
                         </td>
                     </tr>
                     <tr>
-                        <td style="text-align: left;">
+                        <td>
                             WiFi Strength
                         </td>
-                        <td style="text-align: right;">
-                            <div id="wifi-rssi" style="font-family: monospace;"></div>
+                        <td>
+                            <div id="wifi-rssi"></div>
                         </td>
                     </tr>
                     <tr>
-                        <td style="text-align: left;">
+                        <td>
                             Local domain
                         </td>
-                        <td style="text-align: right;">
-                            <a id="system-local-domain" style="font-family: monospace;"></a>
+                        <td>
+                            <a id="system-local-domain"></a>
                         </td>
                     </tr>
                     <tr>
-                        <td style="text-align: left;">
+                        <td>
                             Local IP address
                         </td>
-                        <td style="text-align: right;">
-                            <a id="system-ip-addr" style="font-family: monospace;"></a>
+                        <td>
+                            <a id="system-ip-addr"></a>
                         </td>
                     </tr>
                     <tr>
-                        <td style="text-align: left;">
+                        <td>
                             Last NTP sync
                         </td>
-                        <td style="text-align: right;">
-                            <div id="last-ntp-sync" style="font-family: monospace;"></div>
+                        <td>
+                            <div id="last-ntp-sync"></div>
                         </td>
                     </tr>
                     <tr>
-                        <td style="text-align: left;">
+                        <td>
                             System time
                         </td>
-                        <td style="text-align: right;">
-                            <div id="system-time" style="font-family: monospace;"></div>
+                        <td>
+                            <div id="system-time"></div>
                         </td>
                     </tr>
                 </table>

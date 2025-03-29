@@ -1,10 +1,9 @@
 var received_data;
-var time_div, main_output_checkbox, system_local_domain, system_ip_addr, wifi_ssid, wifi_rssi;
+var main_checkbox, timer_checkbox;
+var time_div, system_local_domain, system_ip_addr, wifi_ssid, wifi_rssi;
 var system_time, system_time_elem, last_ntp_sync, last_ntp_sync_elem;
-
 var to_time, from_time, timer_save_button;
 
-// Convert to GMT-3 using Intl.DateTimeFormat
 const time_formatter = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'America/Argentina/Buenos_Aires',
     year: 'numeric',
@@ -72,10 +71,22 @@ function handle_click(cb) {
 
 function update_system_time() {
     socket.send("main-output-status");
+function timer_set_time() {
+    var query_json = new Object();
+
+    query_json.from = new Object();
+    query_json.from.hour = from_time.value.slice(0, 2);
+    query_json.from.minute = from_time.value.slice(3, 5);
+
+    query_json.to = new Object();
+    query_json.to.hour = to_time.value.slice(0, 2);
+    query_json.to.minute = to_time.value.slice(3, 5);
+    console.log(query_json);
 }
 
 function query_data() {
-    main_output_checkbox = document.getElementById("main-output-checkbox");
+    main_checkbox = document.getElementById("main-checkbox");
+    timer_checkbox = document.getElementById("timer-checkbox");
     system_local_domain = document.getElementById("system-local-domain");
     last_ntp_sync_elem = document.getElementById("last-ntp-sync");
     system_time_elem = document.getElementById("system-time");
@@ -85,28 +96,9 @@ function query_data() {
 
     from_time = document.getElementById("from-time");
     to_time = document.getElementById("to-time");
+
     timer_save_button = document.getElementById("timer-save");
-
-    timer_save_button.addEventListener(
-        "click",
-        () => {
-            socket.send("timer-set-values");
-            socket.send(from_time.value)
-            socket.send(to_time.value)
-            console.log(from_time.value, to_time.value);
-        },
-        false,
-    );
-
-    /*
-    to_time.addEventListener(
-        "input",
-        () => {
-            console.log(to_time.value);
-        },
-        false,
-    );
-    */
+    timer_save_button.addEventListener( "click", timer_set_time, false);
 
     // setInterval(update_system_time, 30*1000); // update time every 30 secs
 }

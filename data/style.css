@@ -1,6 +1,4 @@
 body {
-    color: black;
-    background-color: white;
     margin: 3em auto 3em auto;
     text-align: center;
     font-family: "Nimbus Sans", "Nimbus Sans L", "Helvetica", Inter;
@@ -14,7 +12,7 @@ body {
 #main-div {
     max-width: 23em;
     margin: auto auto;
-    padding: 0em 10px;
+    padding: 0 10px;
 }
 
 table {
@@ -26,14 +24,13 @@ tr {
     border-color: #3E3E42;
 }
 
-#main-toggle-div {
-    margin-bottom: 0.5em;
-    cursor: pointer;
-    user-select: none;
+td {
+    width: 100%;
 }
 
 #main-toggle-div {
-    padding-top: 0.5em;
+    margin-bottom: 0.5em;
+    cursor: pointer;
     padding: 1.25em 28px 1.00em 28px;
     border-radius: 8px;
     border: 1px solid #E3E3E3;
@@ -46,7 +43,6 @@ tr {
 
 #timer-enable {
     cursor: pointer;
-    user-select: none;
     padding: 27.5px 28px 16px 28px;
 }
 
@@ -71,7 +67,7 @@ tr {
 }
 
 #from-time:hover, #to-time:hover {
-    border-color: #3E3E42;
+    border-color: #828282;
 }
 
 #timer-save-div {
@@ -99,11 +95,7 @@ tr {
 }
 
 #timer-save:hover {
-    border-color: black;
-}
-
-td {
-    width: 100%;
+    border-color: #828282;
 }
 
 #buttons-div {
@@ -111,14 +103,7 @@ td {
     margin-left: auto;
     margin-right: auto;
     font-size: 22px;
-}
-
-#main-output-checkbox, #timer-checkbox {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    margin: 0;
-    padding: 0;
+    user-select: none;
 }
 
 hr {
@@ -132,6 +117,14 @@ hr {
     td {
         padding: .20em;
         text-wrap: nowrap;
+    }
+    td:nth-child(1) {
+        text-align: left;
+        user-select: none;
+    }
+    td:nth-child(2) {
+        text-align: right;
+        font-family: monospace;
     }
 }
 
@@ -159,23 +152,63 @@ h1 {
     vertical-align: bottom;
 }
 
+#main-checkbox, #timer-checkbox {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #E3E3E3;
+    border-radius: 5px;
+    color: black;
+    text-align: center;
+    vertical-align: center;
+    cursor: pointer;
+    color: white;
+    svg {
+        display: none;
+    }
+}
+
+#main-checkbox:hover, #timer-checkbox:hover {
+    border: 1px solid #828282;
+}
+
+#main-checkbox[checked="1"], #timer-checkbox[checked="1"] {
+    background-color: #3584e4;
+    svg {
+        display: revert;
+    }
+}
+
+#checkmark-svg {
+    width: 14px;
+    height: 20px;
+}
+
+#main-checkbox-td, #timer-checkbox-td {
+    display: block;
+    padding: 0;
+    margin: 0;
+}
+
 @media (prefers-color-scheme: dark) {
     body {
         color: white;
         background-color: #17171A;
     }
+
     a, a:visited {
         color: #56C8FF;
     }
+
     input {
         color-scheme: dark;
     }
+
     #buttons-div {
         border: none;
     }
 
     #main-toggle-div, #timer {
-        background-color: #232327;
+        background-color: #232326;
         border: none;
     }
 
@@ -184,10 +217,10 @@ h1 {
     }
 
     #timer-save {
-        border: 1px solid #999999;
+        border-color: #999999;
         color: white;
         background-color: #303033;
-        border: 1px solid #3E3E42;
+        border-color: #3E3E42;
     }
 
     #timer-save:active {
@@ -195,13 +228,19 @@ h1 {
         border: none;
     }
 
-    #main-output-checkbox:checked, #timer-checkbox:checked {
-        accent-color: #56C8FF;
-    }
-
     #from-time, #to-time {
         background-color: #303033;
         color: white;
-        border: 1px solid #3E3E42;
+        border-color: #3E3E42;
+    }
+
+    #main-checkbox, #timer-checkbox {
+        border-color: #3E3E42;
+        background-color: #303033;
+    }
+
+    #main-checkbox[checked="1"], #timer-checkbox[checked="1"] {
+        background-color: #56C8FF;
+        color: #004263;
     }
 }

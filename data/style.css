@@ -12,10 +12,9 @@ body {
 }
 
 #main-div {
-    max-width: 25em;
-    min-height: 85vh;
+    max-width: 23em;
     margin: auto auto;
-    padding: 0em 0.2em;
+    padding: 0em 10px;
 }
 
 table {
@@ -33,35 +32,87 @@ tr {
     user-select: none;
 }
 
-#main-toggle-div, #timer-div {
+#main-toggle-div {
     padding-top: 0.5em;
-    padding: 1.25em 1.50em 1.00em 1.50em;
+    padding: 1.25em 28px 1.00em 28px;
     border-radius: 8px;
     border: 1px solid #E3E3E3;
 }
 
-#timer-div {
-    padding: 1.25em 1.50em 1.25em 1.50em;
+#timer {
+    border-radius: 8px;
+    border: 1px solid #E3E3E3;
 }
 
-#timer-div2 {
-    border-bottom: 1px solid #E3E3E3;
+#timer-enable {
     cursor: pointer;
     user-select: none;
+    padding: 27.5px 28px 16px 28px;
+}
+
+#timer-picker {
+    padding: 18px 28px 0.00em 28px;
+    font-size: 20px;
+}
+
+#timer-sep {
+    border-bottom: 1px solid #E3E3E3;
+    margin: 0 30px 0 30px;
+}
+
+#from-time, #to-time {
+    font-size: 18px;
+    padding: 2px;
+    margin: 0px;
+    border: 1px solid #E3E3E3;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: white;
+}
+
+#from-time:hover, #to-time:hover {
+    border-color: #3E3E42;
+}
+
+#timer-save-div {
+    padding: 18px 30px 30px 30px;
+    text-align: center;
+}
+
+#timer-save {
+    margin-right: 0px;
+    box-shadow: none;
+    border: 1px solid #E3E3E3;
+    color: black;
+    background-color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    height: 32px;
+    font-size: 14px;
+    width: 100%;
+    font-weight: bold;
+}
+
+#timer-save:active {
+  background-color: #E3E3E3;
+  border: none;
+  /* transform: translateY(1px); */
+}
+
+#timer-save:hover {
+    border-color: black;
+}
+
+
+td {
+    width: 100%;
 }
 
 #buttons-div {
     text-align: left;
     margin-left: auto;
     margin-right: auto;
-    /* border-radius: 14px; */
-    /* border: 1px solid #BCCCDC; */
     font-size: 22px;
-}
-
-#label-box {
-    width: 100%;
-    font-size: 20px;
 }
 
 #main-output-checkbox, #timer-checkbox {
@@ -82,6 +133,7 @@ hr {
     font-size: 16px;
     td {
         padding: .20em;
+        text-wrap: nowrap;
     }
 }
 
@@ -111,23 +163,45 @@ h1 {
 
 @media (prefers-color-scheme: dark) {
     body {
+        /* color: #E2E2E2; */
         color: white;
-        background-color: #202020;
+        /* background-color: #202020; */
+        background-color: #17171A;
     }
     a, a:visited {
         color: #56C8FF;
     }
-    #buttons-div {
-        /* background-color: #303033; */
-        border: none;
+    input {
+        color-scheme: dark;
     }
-    #main-toggle-div, #timer-div {
-        background-color: #303033;
+    #buttons-div {
         border: none;
     }
 
-    #timer-div2 {
+    #main-toggle-div, #timer {
+        /* background-color: #303033; */
+        background-color: #232327;
+        border: none;
+    }
+
+    #timer-sep {
         border-bottom-color: #3E3E42;
+    }
+
+    #timer-save {
+        border: 1px solid #999999;
+        color: white;
+        background-color: #303033;
+        border: 1px solid #3E3E42;
+    }
+
+    #timer-save:hover {
+        /* border: 1px solid #E3E3E3; */
+    }
+
+    #timer-save:active {
+        background-color: #3E3E42;
+        border: none;
     }
 
     /*
@@ -143,5 +217,10 @@ h1 {
     #main-output-checkbox:checked, #timer-checkbox:checked {
         /* appearance: revert; */
         accent-color: #56C8FF;
+    }
+    #from-time, #to-time {
+        background-color: #303033;
+        color: white;
+        border: 1px solid #3E3E42;
     }
 }

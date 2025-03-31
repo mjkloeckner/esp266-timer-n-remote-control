@@ -10,7 +10,6 @@
 #define REMOTE_LED_PIN LED_BUILTIN
 #define MAIN_OUTPUT_PIN 5
 #define MAIN_SWITCH_INPUT_PIN 4
-#define SETUP_COMPLETE_OUTPUT_PIN 14
 
 #define WIFI_SSID "hello-world"
 #define WIFI_PASSWD "12345678"
@@ -40,6 +39,7 @@ void setup_websocket();
 void setup_webserver();
 void setup_mdns();
 void setup_fs();
+void update_all_clients_checkbox();
 
 void show_time(bool from_sntp = false) {
     time(&system_time);              // read the current time
@@ -71,11 +71,9 @@ void setup() {
     pinMode(REMOTE_LED_PIN, OUTPUT);
     pinMode(MAIN_OUTPUT_PIN, OUTPUT);
     pinMode(MAIN_SWITCH_INPUT_PIN, INPUT);
-    pinMode(SETUP_COMPLETE_OUTPUT_PIN, OUTPUT);
 
     digitalWrite(REMOTE_LED_PIN, HIGH); // led builtin uses inverted logic
     digitalWrite(MAIN_OUTPUT_PIN, LOW);
-    digitalWrite(SETUP_COMPLETE_OUTPUT_PIN, LOW);
 
     Serial.begin(115200);
     Serial.setDebugOutput(false);
@@ -98,7 +96,6 @@ void setup() {
     configTime(MY_TZ, MY_NTP_SERVER); // Here is the IMPORTANT ONE LINER needed in your sketch!
     settimeofday_cb(show_time);       // ntp update callback
     show_time();
-    digitalWrite(SETUP_COMPLETE_OUTPUT_PIN, HIGH);
 }
 
 uint32_t t = 0, clock_dt = 0, main_output_dt = 0;
@@ -109,7 +106,7 @@ void loop() {
         if(digitalRead(MAIN_SWITCH_INPUT_PIN)) {
             main_output_dt = millis();
             main_output_toggle();
-            update_all_socket_clients();
+            update_all_clients_checkbox();
         }
     }
 
@@ -174,11 +171,12 @@ void timer_toggle() {
 void update_data() {
     data["main-output-enabled"] = String(main_output_enabled);
     data["system-local-domain"] = String(MDNS_DOMAIN);
-    data["system-ip-addr"] = WiFi.localIP().toString();
-    data["last-ntp-sync"] = (long)last_ntp_sync;
-    data["system-time"] = (long)system_time;
-    data["wifi-ssid"] = WIFI_SSID;
-    data["wifi-rssi"] = WiFi.RSSI();
+    data["system-ip-addr"]      = WiFi.localIP().toString();
+    data["last-ntp-sync"]       = (long)last_ntp_sync;
+    data["system-time"]         = (long)system_time;
+    data["wifi-ssid"]           = WIFI_SSID;
+    data["wifi-rssi"]           = WiFi.RSSI();
+    data["timer-enabled"]       = String(timer_enabled);
 }
 
 void update_all_socket_clients() {
@@ -235,6 +233,7 @@ void webp_socket_event(uint8_t num, WStype_t type, uint8_t *payload, size_t len)
             case MAIN_OUTPUT_STATUS:
             default:
                 update_data();
+                data["type"] = "all";
                 String data_as_json = JSON.stringify(data);
                 web_socket.sendTXT(num, data_as_json);
                 break;

@@ -48,8 +48,8 @@ function update_time() {
 
 function update_timer() {
     console.log(received_data);
-    from_time.value = received_data["from-time"];
-    to_time.value = received_data["to-time"];
+    from_time.value = received_data["from"]["hour"] + ":" + received_data["from"]["minute"];
+    to_time.value = received_data["to"]["hour"] + ":" + received_data["to"]["minute"];
 }
 
 function update_all() {
@@ -124,7 +124,6 @@ function timer_set_time() {
     query_json.to = new Object();
     query_json.to.hour = to_time.value.slice(0, 2);
     query_json.to.minute = to_time.value.slice(3, 5);
-    console.log(query_json);
 
     socket.send(query_types["TIMER_SET_VALUES"] + JSON.stringify(query_json));
 }

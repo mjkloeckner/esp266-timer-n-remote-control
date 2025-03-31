@@ -29,7 +29,7 @@ ESP8266WebServer server(80);
 WebSocketsServer web_socket = WebSocketsServer(81);
 JSONVar data, system_time_data, timer_data;
 timer_values_t timer_values;
-char from_time[8], to_time[8];
+char from_hour[4], from_minute[4], to_hour[4], to_minute[4];
 
 time_t system_time, last_ntp_sync;
 tm tm;
@@ -60,8 +60,9 @@ void save_timer_values_to_file() {
     }
 
     update_timer_data();
+
     if (file.print(JSON.stringify(timer_data).c_str())) {
-        // Serial.printf("[LITTLEFS] writing `%s` to file\n", JSON.stringify(timer_data).c_str());
+        Serial.printf("[LITTLEFS] writing `%s` to file\n", JSON.stringify(timer_data).c_str());
         Serial.println("[LITTLEFS] Timer values saved");
     } else {
         Serial.println("[LITTLEFS] Timer values write failed");
@@ -101,15 +102,12 @@ void read_timer_values_from_file() {
     // Serial.println(timer_values["from"]["hour"]);
     // Serial.println(String(timer_values["from"]["hour"]).toInt());
 
-    timer_values_t new_values = {0};
-    /*
-    {
-        String(timer_values["from"]["hour"]).toInt(),
-        String(timer_values["from"]["minute"]).toInt(),
-        String(timer_values["to"]["hour"]).toInt(),
-        String(timer_values["to"]["minute"]).toInt()
+    timer_values_t new_values = {
+        (uint8_t)String(timer_values["from"]["hour"]).toInt(),
+        (uint8_t)String(timer_values["from"]["minute"]).toInt(),
+        (uint8_t)String(timer_values["to"]["hour"]).toInt(),
+        (uint8_t)String(timer_values["to"]["minute"]).toInt()
     };
-    */
 
     Serial.printf("[UPDATE_TIMER_VALUES] %02d:%02d to %02d:%02d\n",
             new_values.from_hour, new_values.from_minute,
@@ -142,7 +140,7 @@ uint32_t sntp_startup_delay_MS_rfc_not_less_than_60000 () {
 
 // ntp polling interval
 uint32_t sntp_update_delay_MS_rfc_not_less_than_15000 () {
-    return 8 * 60 * 60 * 1000UL; // 60 mins
+    return 8 * 60 * 60 * 1000UL; // 8*60 mins
 }
 
 void setup() {
@@ -227,10 +225,10 @@ void loop() {
     web_socket.loop();
     server.handleClient();
 
-    // print system time every minute
-    if((t - clock_dt) > 60000){
+    // update `system_time` every 5s
+    if((t - clock_dt) > 5000){
         clock_dt = millis();
-        show_time();
+        time(&system_time); // read the current time
     }
 
     update_timer_output();
@@ -241,7 +239,7 @@ void setup_wifi() {
 
     Serial.printf("[SETUP] Connecting to WiFi");
     while(WiFi.status() != WL_CONNECTED) {
-        delay(100);
+        delay(200);
         Serial.print(".");
     }
     Serial.printf("\n[SETUP] Connected to '%s' IP address ", WIFI_SSID);
@@ -284,8 +282,10 @@ void update_data() {
     data["timer-enabled"]       = String(timer_enabled);
 
     update_timer_data();
-    data["from-time"] = from_time;
-    data["to-time"] = to_time;
+    data["from"]["hour"]   = from_hour;
+    data["from"]["minute"] = from_minute;
+    data["to"]["hour"]     = to_hour;
+    data["to"]["minute"]   = to_minute;
 }
 
 void update_all_socket_clients() {
@@ -304,12 +304,15 @@ void update_all_clients_checkbox() {
 }
 
 void update_timer_data() {
-    snprintf(from_time, 8, "%02d:%02d", timer_values.from_hour, timer_values.from_minute);
-    snprintf(to_time, 8, "%02d:%02d", timer_values.to_hour, timer_values.to_minute);
+    snprintf(from_hour,   4, "%02d", timer_values.from_hour);
+    snprintf(from_minute, 4, "%02d", timer_values.from_minute);
+    snprintf(to_hour,     4, "%02d", timer_values.to_hour);
+    snprintf(to_minute,   4, "%02d", timer_values.to_minute);
 
-    timer_data["from-time"] = from_time;
-    timer_data["to-time"] = to_time;
-    Serial.printf("[LOOP] from_time: %s; to_time: %s\n", from_time, to_time);
+    timer_data["from"]["hour"]   = from_hour;
+    timer_data["from"]["minute"] = from_minute;
+    timer_data["to"]["hour"]     = to_hour;
+    timer_data["to"]["minute"]   = to_minute;
 }
 
 void update_all_clients_timer_values() {

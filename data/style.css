@@ -28,6 +28,14 @@ td {
     width: 100%;
 }
 
+a, a:visited {
+    color: #00E;
+}
+
+h1 {
+    font-size: 36px;
+}
+
 #main-toggle-div {
     margin-bottom: 0.5em;
     cursor: pointer;
@@ -66,10 +74,6 @@ td {
     background-color: white;
 }
 
-#from-time:hover, #to-time:hover {
-    border-color: #828282;
-}
-
 #timer-save-div {
     padding: 18px 30px 30px 30px;
     text-align: center;
@@ -94,8 +98,20 @@ td {
   border: none;
 }
 
-#timer-save:hover {
-    border-color: #828282;
+@media (hover: hover) and (pointer: fine) {
+    #main-toggle-div:hover #main-checkbox,
+    #timer-enable:hover #timer-checkbox,
+    #from-time:hover, #to-time:hover,
+    #main-checkbox:hover, #timer-checkbox:hover,
+    #timer-save:hover {
+        border: 1px solid #999999;
+    }
+}
+
+#from-time:focus-visible,
+#to-time:focus-visible {
+    border: 1px solid #999999;
+    outline: none;
 }
 
 #buttons-div {
@@ -104,11 +120,6 @@ td {
     margin-right: auto;
     font-size: 22px;
     user-select: none;
-}
-
-hr {
-    margin-top: 0;
-    margin-bottom: 0;
 }
 
 #info-div {
@@ -126,14 +137,6 @@ hr {
         text-align: right;
         font-family: monospace;
     }
-}
-
-a, a:visited {
-    color: #00E;
-}
-
-h1 {
-    font-size: 36px;
 }
 
 #save-button {
@@ -165,10 +168,6 @@ h1 {
     svg {
         display: none;
     }
-}
-
-#main-checkbox:hover, #timer-checkbox:hover {
-    border: 1px solid #828282;
 }
 
 #main-checkbox[checked="1"], #timer-checkbox[checked="1"] {
@@ -242,5 +241,20 @@ h1 {
     #main-checkbox[checked="1"], #timer-checkbox[checked="1"] {
         background-color: #56C8FF;
         color: #004263;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        #main-toggle-div:hover #main-checkbox,
+        #timer-enable:hover #timer-checkbox,
+        #from-time:hover, #to-time:hover,
+        #main-checkbox:hover, #timer-checkbox:hover,
+        #timer-save:hover {
+            border: 1px solid #828282;
+        }
+    }
+
+    #from-time:focus-visible,
+    #to-time:focus-visible {
+        border: 1px solid #828282;
     }
 }

@@ -93,13 +93,6 @@ void read_timer_values_from_file() {
         return;
     }
 
-    // Serial.printf("[UPDATE_TIMER_VALUES] %02d:%02d to %02d:%02d\n",
-    //         new_values.from_hour, new_values.from_minute,
-    //         new_values.to_hour, new_values.to_minute);
-
-    // Serial.println(timer_values["from"]["hour"]);
-    // Serial.println(String(timer_values["from"]["hour"]).toInt());
-
     timer_values_t new_values = {
         (uint8_t)String(timer_values["from"]["hour"]).toInt(),
         (uint8_t)String(timer_values["from"]["minute"]).toInt(),
@@ -211,16 +204,6 @@ void loop() {
         }
     }
 
-    // if((t - dt) > MAIN_OUTPUT_PERIOD) {
-    //     dt = millis();
-    //     digitalWrite(MAIN_OUTPUT_PIN, HIGH);
-    //     main_output_dt = millis();
-    // }
-
-    // if((t - main_output_dt) > MAIN_OUTPUT_ON_TIME) {
-    //     digitalWrite(MAIN_OUTPUT_PIN, LOW);
-    // }
-
     MDNS.update();
     web_socket.loop();
     server.handleClient();
@@ -319,10 +302,9 @@ void update_timer_data() {
 }
 
 void update_all_clients_timer_values() {
-    // String output_data_as_json = build_timer_values_json();
     clear_data();
-    data["type"] = "timer";
     update_timer_data();
+    data["type"] = "timer";
     data["timer"] = timer_data;
     web_socket.broadcastTXT(JSON.stringify(data).c_str());
 }

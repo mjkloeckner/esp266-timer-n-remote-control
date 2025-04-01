@@ -36,7 +36,7 @@ function rssi_to_percentage(rssi) {
 
 function update_checkbox() {
     main_checkbox.setAttribute("checked", received_data["main-output-enabled"]);
-    timer_checkbox.setAttribute("checked", received_data["timer-enabled"]);
+    timer_checkbox.setAttribute("checked", received_data["timer"]["enabled"]);
 }
 
 function update_time() {
@@ -47,9 +47,10 @@ function update_time() {
 }
 
 function update_timer() {
-    console.log(received_data);
-    from_time.value = received_data["from"]["hour"] + ":" + received_data["from"]["minute"];
-    to_time.value = received_data["to"]["hour"] + ":" + received_data["to"]["minute"];
+    from_time.value = received_data["timer"]["from"]["hour"] + ":"
+        + received_data["timer"]["from"]["minute"];
+    to_time.value = received_data["timer"]["to"]["hour"] + ":"
+        + received_data["timer"]["to"]["minute"];
 }
 
 function update_all() {

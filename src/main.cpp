@@ -27,9 +27,8 @@ typedef struct {
 
 ESP8266WebServer server(80);
 WebSocketsServer web_socket = WebSocketsServer(81);
-JSONVar data, system_time_data, timer_data;
+JSONVar data, timer_data;
 timer_values_t timer_values;
-char from_hour[4], from_minute[4], to_hour[4], to_minute[4];
 
 time_t system_time, last_ntp_sync;
 tm tm;
@@ -60,7 +59,6 @@ void save_timer_values_to_file() {
     }
 
     update_timer_data();
-
     if (file.print(JSON.stringify(timer_data).c_str())) {
         Serial.printf("[LITTLEFS] writing `%s` to file\n", JSON.stringify(timer_data).c_str());
         Serial.println("[LITTLEFS] Timer values saved");
@@ -108,6 +106,8 @@ void read_timer_values_from_file() {
         (uint8_t)String(timer_values["to"]["hour"]).toInt(),
         (uint8_t)String(timer_values["to"]["minute"]).toInt()
     };
+
+    timer_enabled = String(timer_values["enabled"]).toInt();
 
     Serial.printf("[UPDATE_TIMER_VALUES] %02d:%02d to %02d:%02d\n",
             new_values.from_hour, new_values.from_minute,
@@ -271,6 +271,13 @@ void timer_toggle() {
     timer_enabled = !timer_enabled;
 }
 
+void clear_data() {
+    JSONVar keys = data.keys();
+    for (int i = 0; i < keys.length(); i++) {
+        data[keys[i]] = undefined;
+    }
+}
+
 void update_data() {
     data["main-output-enabled"] = String(main_output_enabled);
     data["system-local-domain"] = String(MDNS_DOMAIN);
@@ -279,13 +286,9 @@ void update_data() {
     data["system-time"]         = (long)system_time;
     data["wifi-ssid"]           = WIFI_SSID;
     data["wifi-rssi"]           = WiFi.RSSI();
-    data["timer-enabled"]       = String(timer_enabled);
 
     update_timer_data();
-    data["from"]["hour"]   = from_hour;
-    data["from"]["minute"] = from_minute;
-    data["to"]["hour"]     = to_hour;
-    data["to"]["minute"]   = to_minute;
+    data["timer"] = timer_data;
 }
 
 void update_all_socket_clients() {
@@ -298,28 +301,30 @@ void update_all_clients_checkbox() {
     JSONVar output_data;
     output_data["type"] = "cb";
     output_data["main-output-enabled"] = String(main_output_enabled);
-    output_data["timer-enabled"] = String(timer_enabled);
+    output_data["timer"]["enabled"] = String(timer_enabled);
     String output_data_as_json = JSON.stringify(output_data);
     web_socket.broadcastTXT(output_data_as_json);
 }
 
-void update_timer_data() {
-    snprintf(from_hour,   4, "%02d", timer_values.from_hour);
-    snprintf(from_minute, 4, "%02d", timer_values.from_minute);
-    snprintf(to_hour,     4, "%02d", timer_values.to_hour);
-    snprintf(to_minute,   4, "%02d", timer_values.to_minute);
+String left_pad(uint8_t n) {
+    return n < 10 ? "0" + String(n) : String(n);
+}
 
-    timer_data["from"]["hour"]   = from_hour;
-    timer_data["from"]["minute"] = from_minute;
-    timer_data["to"]["hour"]     = to_hour;
-    timer_data["to"]["minute"]   = to_minute;
+void update_timer_data() {
+    timer_data["enabled"]        = String(timer_enabled);
+    timer_data["from"]["hour"]   = left_pad(timer_values.from_hour);
+    timer_data["from"]["minute"] = left_pad(timer_values.from_minute);
+    timer_data["to"]["hour"]     = left_pad(timer_values.to_hour);
+    timer_data["to"]["minute"]   = left_pad(timer_values.to_minute);
 }
 
 void update_all_clients_timer_values() {
     // String output_data_as_json = build_timer_values_json();
-    timer_data["type"] = "timer";
+    clear_data();
+    data["type"] = "timer";
     update_timer_data();
-    web_socket.broadcastTXT(JSON.stringify(timer_data).c_str());
+    data["timer"] = timer_data;
+    web_socket.broadcastTXT(JSON.stringify(data).c_str());
 }
 
 void update_timer_values(const timer_values_t new_values) {
@@ -364,20 +369,20 @@ void webp_socket_event(uint8_t num, WStype_t type, uint8_t *payload, size_t len)
                 update_all_clients_checkbox();
                 break;
             case TIMER_SET_VALUES: {
-                    payload++;
+                    payload++; // skip query type
                     Serial.printf("[SOCKET] %s\n", payload);
-                    JSONVar timer_values = JSON.parse((char *)payload);
+                    timer_data = JSON.parse((char *)payload);
 
-                    if(JSON.typeof(timer_values) == "undefined") {
+                    if(JSON.typeof(timer_data) == "undefined") {
                         Serial.println("[SOCKET] Parsing payload failed!");
                         break;
                     }
 
                     timer_values_t new_values = {
-                        (uint8_t)String(timer_values["from"]["hour"]).toInt(),
-                        (uint8_t)String(timer_values["from"]["minute"]).toInt(),
-                        (uint8_t)String(timer_values["to"]["hour"]).toInt(),
-                        (uint8_t)String(timer_values["to"]["minute"]).toInt()
+                        (uint8_t)String(timer_data["from"]["hour"]).toInt(),
+                        (uint8_t)String(timer_data["from"]["minute"]).toInt(),
+                        (uint8_t)String(timer_data["to"]["hour"]).toInt(),
+                        (uint8_t)String(timer_data["to"]["minute"]).toInt()
                     };
 
                     update_timer_values(new_values);

@@ -139,26 +139,40 @@ uint32_t sntp_update_delay_MS_rfc_not_less_than_15000 () {
     return 8 * 60 * 60 * 1000UL; // 8*60 mins
 }
 
-void update_timer_output() {
-    // check timer output every 10 seconds
-    if((t - timer_dt) > 10*1000) {
-        tm tm;
-        localtime_r(&system_time, &tm);  // update the structure tm with the current time
-        if((timer_enabled) && (!main_output_enabled)) {
-            if((tm.tm_hour >= timer_values.from_hour)
-                && (tm.tm_min >= timer_values.from_minute)
-                && (tm.tm_min <= timer_values.to_hour)
-                && (tm.tm_min <= timer_values.to_minute)) {
+void main_output_set_to_if_not_already(bool state) {
+    if((bool)main_output_enabled != state) {
+        digitalWrite(MAIN_OUTPUT_PIN, main_output_enabled ^= 1);
+        update_all_clients_checkbox();
+    }
+}
 
-                digitalWrite(MAIN_OUTPUT_PIN, HIGH);
-                main_output_enabled = 1;
-                update_all_clients_checkbox();
-            } 
-            else {
-                digitalWrite(MAIN_OUTPUT_PIN, LOW);
-                main_output_enabled = 0;
-                update_all_clients_checkbox();
-            }
+void update_timer_output() {
+    tm now_tm;
+    uint16_t timer_from_24, timer_to_24, now_24;
+
+    if(!timer_enabled) return;
+
+    localtime_r(&system_time, &now_tm);
+    timer_from_24 = (timer_values.from_hour*100)+timer_values.from_minute;
+    timer_to_24 = (timer_values.to_hour*100)+timer_values.to_minute;
+    now_24 = (now_tm.tm_hour*100)+now_tm.tm_min;
+
+    Serial.printf("[TIMER] from: %04d; to: %04d; now: %04d\n",
+            timer_from_24, timer_to_24, now_24);
+
+    if(timer_to_24 > timer_from_24) {
+        if((now_24 >= timer_from_24) && (now_24 < timer_to_24)) {
+            main_output_set_to_if_not_already(true);
+        }
+        else { 
+            main_output_set_to_if_not_already(false);
+        }
+    } else {
+        if((now_24 < timer_to_24) || now_24 >= timer_from_24) {
+            main_output_set_to_if_not_already(true);
+        }
+        else {
+            main_output_set_to_if_not_already(false);
         }
     }
 }
@@ -246,10 +260,14 @@ void websocket_event_handler(uint8_t num, WStype_t type, uint8_t *payload, size_
             switch(query_type) {
             case MAIN_OUTPUT_TOGGLE:
                 digitalWrite(MAIN_OUTPUT_PIN, main_output_enabled ^= 1);
+                if(timer_enabled) {
+                    timer_enabled = 0;
+                }
                 update_all_clients_checkbox();
                 break;
             case TIMER_TOGGLE:
                 timer_enabled = !timer_enabled;
+                update_timer_output();
                 update_all_clients_checkbox();
                 break;
             case TIMER_SET_VALUES: {
@@ -270,6 +288,7 @@ void websocket_event_handler(uint8_t num, WStype_t type, uint8_t *payload, size_
                     };
 
                     update_timer_values(new_values);
+                    update_timer_output();
                     save_timer_values_to_file();
                     update_all_clients_timer_values();
                 }
@@ -432,6 +451,9 @@ void loop() {
         if(digitalRead(MAIN_SWITCH_INPUT_PIN)) {
             main_output_dt = millis();
             digitalWrite(MAIN_OUTPUT_PIN, main_output_enabled ^= 1);
+            if(timer_enabled) {
+                timer_enabled = 0;
+            }
             update_all_clients_checkbox();
         }
     }
@@ -440,9 +462,9 @@ void loop() {
     if((t - system_time_dt) > 5000){
         system_time_dt = millis();
         time(&system_time); // read the current time
+        update_timer_output();
     }
 
-    update_timer_output();
     MDNS.update();
     web_socket.loop();
     server.handleClient();

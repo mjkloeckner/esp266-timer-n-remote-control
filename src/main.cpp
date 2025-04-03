@@ -7,8 +7,8 @@
 #include <time.h>
 #include <coredecls.h> // settimeofday_cb() callback
 
-#define REMOTE_LED_PIN LED_BUILTIN
-#define MAIN_OUTPUT_PIN 5
+#define REMOTE_LED_PIN        LED_BUILTIN
+#define MAIN_OUTPUT_PIN       5
 #define MAIN_SWITCH_INPUT_PIN 4
 
 #define WIFI_SSID "hello-world"
@@ -18,30 +18,102 @@
 #define MY_NTP_SERVER "pool.ntp.org"
 #define MY_TZ "<-03>3"
 
-#define MAIN_SWITCH_REPEAT_TIME 200
+#define MAIN_SWITCH_REPEAT_TIME 500
+
+typedef enum {
+    MAIN_OUTPUT_STATUS = 0,
+    MAIN_OUTPUT_TOGGLE,
+    TIMER_TOGGLE,
+    TIMER_SET_VALUES
+} query_t;
+
+typedef struct {
+    uint8_t from_hour, from_minute;
+    uint8_t to_hour, to_minute;
+} timer_values_t;
 
 ESP8266WebServer server(80);
 WebSocketsServer web_socket = WebSocketsServer(81);
-JSONVar data, system_time_data;
+JSONVar data, timer_data;
+timer_values_t timer_values;
 
 time_t system_time, last_ntp_sync;
-tm tm;
 uint8_t remote_devices = 0, timer_enabled = 0, main_output_enabled = 0;
-
-void webp_socket_event(uint8_t, WStype_t, uint8_t *, size_t);
-void webp_handler();
-
-void main_output_toggle();
-void update_all_socket_clients();
+uint32_t t = 0, system_time_dt = 0, main_output_dt = 0, timer_dt = 0;
 
 void setup_wifi();
 void setup_websocket();
 void setup_webserver();
 void setup_mdns();
 void setup_fs();
+
+void update_timer_values(const timer_values_t);
+void update_timer_data();
 void update_all_clients_checkbox();
+void update_all_socket_clients();
+
+void websocket_event_handler(uint8_t, WStype_t, uint8_t *, size_t);
+
+void save_timer_values_to_file() {
+    const char* file_path = "timer_values.json";
+    File file = LittleFS.open(file_path, "w");
+
+    if (!file) {
+        Serial.printf("[LITTLEFS] Failed to open file `%s` for writing\n", file_path);
+        return;
+    }
+
+    update_timer_data();
+    if (file.print(JSON.stringify(timer_data).c_str())) {
+        Serial.println("[LITTLEFS] Timer values saved");
+    } else {
+        Serial.println("[LITTLEFS] Timer values write failed");
+    }
+
+    // delay(1000);  // Make sure the CREATE and LASTWRITE times are different
+    file.close();
+}
+
+void read_timer_values_from_file() {
+    const char* file_path = "timer_values.json";
+    File file = LittleFS.open(file_path, "r");
+
+    if (!file) {
+        Serial.printf("[LITTLEFS] Failed to open file `%s`. Setting default values..\n", file_path);
+        timer_values_t new_values = {18, 0, 0, 0};
+        update_timer_values(new_values);
+        return;
+    }
+
+    String timer_values_json = file.readString();
+    file.close();
+
+    JSONVar timer_values = JSON.parse(timer_values_json.c_str());
+    if(JSON.typeof(timer_values) == "undefined") {
+        Serial.println("[SOCKET] Parsing file `timer-values.json` failed");
+        return;
+    }
+
+    timer_values_t new_values = {
+        (uint8_t)String(timer_values["from"]["hour"]).toInt(),
+        (uint8_t)String(timer_values["from"]["minute"]).toInt(),
+        (uint8_t)String(timer_values["to"]["hour"]).toInt(),
+        (uint8_t)String(timer_values["to"]["minute"]).toInt()
+    };
+
+    timer_enabled = String(timer_values["enabled"]).toInt();
+
+    Serial.printf("[UPDATE_TIMER_VALUES] %02d:%02d to %02d:%02d\n",
+            new_values.from_hour, new_values.from_minute,
+            new_values.to_hour, new_values.to_minute);
+
+    update_timer_values(new_values);
+    update_timer_data();
+}
 
 void show_time(bool from_sntp = false) {
+    tm tm;
+
     time(&system_time);              // read the current time
     localtime_r(&system_time, &tm);  // update the structure tm with the current time
 
@@ -64,108 +136,52 @@ uint32_t sntp_startup_delay_MS_rfc_not_less_than_60000 () {
 
 // ntp polling interval
 uint32_t sntp_update_delay_MS_rfc_not_less_than_15000 () {
-    return 8 * 60 * 60 * 1000UL; // 60 mins
+    return 8 * 60 * 60 * 1000UL; // 8*60 mins
 }
 
-void setup() {
-    pinMode(REMOTE_LED_PIN, OUTPUT);
-    pinMode(MAIN_OUTPUT_PIN, OUTPUT);
-    pinMode(MAIN_SWITCH_INPUT_PIN, INPUT);
-
-    digitalWrite(REMOTE_LED_PIN, HIGH); // led builtin uses inverted logic
-    digitalWrite(MAIN_OUTPUT_PIN, LOW);
-
-    Serial.begin(115200);
-    Serial.setDebugOutput(false);
-    Serial.printf("\n\n\n");
-    delay(1000);
-
-    Serial.printf("[SETUP] Booting");
-    for(uint8_t t = 10; t > 0; t--) {
-        Serial.print(".");
-        Serial.flush();
-        delay(150);
+void main_output_set_to_if_not_already(bool state) {
+    if((bool)main_output_enabled != state) {
+        digitalWrite(MAIN_OUTPUT_PIN, main_output_enabled ^= 1);
+        update_all_clients_checkbox();
     }
-    Serial.print("\n");
-
-    setup_wifi();
-    setup_fs();
-    setup_websocket();
-    setup_mdns();
-    setup_webserver();
-    configTime(MY_TZ, MY_NTP_SERVER); // Here is the IMPORTANT ONE LINER needed in your sketch!
-    settimeofday_cb(show_time);       // ntp update callback
-    show_time();
 }
 
-uint32_t t = 0, clock_dt = 0, main_output_dt = 0;
-void loop() {
-    t = millis();
+void update_timer_output() {
+    tm now_tm;
+    uint16_t timer_from_24, timer_to_24, now_24;
 
-    if((t - main_output_dt) > MAIN_SWITCH_REPEAT_TIME) {
-        if(digitalRead(MAIN_SWITCH_INPUT_PIN)) {
-            main_output_dt = millis();
-            main_output_toggle();
-            update_all_clients_checkbox();
+    if(!timer_enabled) return;
+
+    localtime_r(&system_time, &now_tm);
+    timer_from_24 = (timer_values.from_hour*100)+timer_values.from_minute;
+    timer_to_24 = (timer_values.to_hour*100)+timer_values.to_minute;
+    now_24 = (now_tm.tm_hour*100)+now_tm.tm_min;
+
+    Serial.printf("[TIMER] from: %04d; to: %04d; now: %04d\n",
+            timer_from_24, timer_to_24, now_24);
+
+    if(timer_to_24 > timer_from_24) {
+        if((now_24 >= timer_from_24) && (now_24 < timer_to_24)) {
+            main_output_set_to_if_not_already(true);
+        }
+        else { 
+            main_output_set_to_if_not_already(false);
+        }
+    } else {
+        if((now_24 < timer_to_24) || now_24 >= timer_from_24) {
+            main_output_set_to_if_not_already(true);
+        }
+        else {
+            main_output_set_to_if_not_already(false);
         }
     }
-
-    // if((t - dt) > MAIN_OUTPUT_PERIOD) {
-    //     dt = millis();
-    //     digitalWrite(MAIN_OUTPUT_PIN, HIGH);
-    //     main_output_dt = millis();
-    // }
-
-    // if((t - main_output_dt) > MAIN_OUTPUT_ON_TIME) {
-    //     digitalWrite(MAIN_OUTPUT_PIN, LOW);
-    // }
-
-    MDNS.update();
-    web_socket.loop();
-    server.handleClient();
-
-    // print system time every minute
-    if((t - clock_dt) > 60000){
-        clock_dt = millis();
-        show_time();
-    }
 }
 
-void setup_wifi() {
-    WiFi.begin(WIFI_SSID, WIFI_PASSWD);
-
-    Serial.printf("[SETUP] Connecting to WiFi");
-    while(WiFi.status() != WL_CONNECTED) {
-        delay(100);
-        Serial.print(".");
+void clear_data() {
+    JSONVar keys = data.keys();
+    for (int i = 0; i < keys.length(); i++) {
+        data[keys[i]] = undefined;
     }
-    Serial.printf("\n[SETUP] Connected to '%s' IP address ", WIFI_SSID);
-    Serial.println(WiFi.localIP());
-}
-
-void setup_mdns() {
-    if (!MDNS.begin(MDNS_DOMAIN)) {
-        Serial.println("[SETUP] Error setting up MDNS responder!");
-        while(1) { delay(100); }
-    }
-
-    MDNS.addService("http", "tcp", 80);
-    Serial.printf("[SETUP] mDNS started domain '%s.local'\n", MDNS_DOMAIN);
-}
-
-void main_output_toggle() {
-    if(main_output_enabled) {
-        // GPOC = (1 << MAIN_OUTPUT_PIN); // low
-        digitalWrite(MAIN_OUTPUT_PIN, LOW);
-    } else {
-        // GPOS = (1 << MAIN_OUTPUT_PIN);  // high
-        digitalWrite(MAIN_OUTPUT_PIN, HIGH);
-    }
-    main_output_enabled = !main_output_enabled;
-}
-
-void timer_toggle() {
-    timer_enabled = !timer_enabled;
 }
 
 void update_data() {
@@ -176,7 +192,9 @@ void update_data() {
     data["system-time"]         = (long)system_time;
     data["wifi-ssid"]           = WIFI_SSID;
     data["wifi-rssi"]           = WiFi.RSSI();
-    data["timer-enabled"]       = String(timer_enabled);
+
+    update_timer_data();
+    data["timer"] = timer_data;
 }
 
 void update_all_socket_clients() {
@@ -189,20 +207,39 @@ void update_all_clients_checkbox() {
     JSONVar output_data;
     output_data["type"] = "cb";
     output_data["main-output-enabled"] = String(main_output_enabled);
-    output_data["timer-enabled"] = String(timer_enabled);
+    output_data["timer"]["enabled"] = String(timer_enabled);
     String output_data_as_json = JSON.stringify(output_data);
     web_socket.broadcastTXT(output_data_as_json);
 }
 
+String left_pad(uint8_t n) {
+    return n < 10 ? "0" + String(n) : String(n);
+}
 
-typedef enum {
-    MAIN_OUTPUT_STATUS = 0,
-    MAIN_OUTPUT_TOGGLE,
-    TIMER_TOGGLE,
-    TIMER_SET_VALUES
-} query_t;
+void update_timer_data() {
+    timer_data["enabled"]        = String(timer_enabled);
+    timer_data["from"]["hour"]   = left_pad(timer_values.from_hour);
+    timer_data["from"]["minute"] = left_pad(timer_values.from_minute);
+    timer_data["to"]["hour"]     = left_pad(timer_values.to_hour);
+    timer_data["to"]["minute"]   = left_pad(timer_values.to_minute);
+}
 
-void webp_socket_event(uint8_t num, WStype_t type, uint8_t *payload, size_t len) {
+void update_all_clients_timer_values() {
+    clear_data();
+    update_timer_data();
+    data["type"] = "timer";
+    data["timer"] = timer_data;
+    web_socket.broadcastTXT(JSON.stringify(data).c_str());
+}
+
+void update_timer_values(const timer_values_t new_values) {
+    timer_values = new_values;
+    Serial.printf("[UPDATE_TIMER_VALUES] %02d:%02d to %02d:%02d\n",
+            timer_values.from_hour, timer_values.from_minute,
+            timer_values.to_hour, timer_values.to_minute);
+}
+
+void websocket_event_handler(uint8_t num, WStype_t type, uint8_t *payload, size_t len) {
     switch(type) {
     case WStype_DISCONNECTED:
         Serial.printf("[SOCKET] %d: Disconnected\n", num);
@@ -222,14 +259,40 @@ void webp_socket_event(uint8_t num, WStype_t type, uint8_t *payload, size_t len)
 
             switch(query_type) {
             case MAIN_OUTPUT_TOGGLE:
-                main_output_toggle();
+                digitalWrite(MAIN_OUTPUT_PIN, main_output_enabled ^= 1);
+                if(timer_enabled) {
+                    timer_enabled = 0;
+                }
                 update_all_clients_checkbox();
                 break;
             case TIMER_TOGGLE:
-                timer_toggle();
+                timer_enabled = !timer_enabled;
+                update_timer_output();
                 update_all_clients_checkbox();
                 break;
-            case TIMER_SET_VALUES:
+            case TIMER_SET_VALUES: {
+                    payload++; // skip query type
+                    Serial.printf("[SOCKET] %s\n", payload);
+                    timer_data = JSON.parse((char *)payload);
+
+                    if(JSON.typeof(timer_data) == "undefined") {
+                        Serial.println("[SOCKET] Parsing payload failed!");
+                        break;
+                    }
+
+                    timer_values_t new_values = {
+                        (uint8_t)String(timer_data["from"]["hour"]).toInt(),
+                        (uint8_t)String(timer_data["from"]["minute"]).toInt(),
+                        (uint8_t)String(timer_data["to"]["hour"]).toInt(),
+                        (uint8_t)String(timer_data["to"]["minute"]).toInt()
+                    };
+
+                    update_timer_values(new_values);
+                    update_timer_output();
+                    save_timer_values_to_file();
+                    update_all_clients_timer_values();
+                }
+                break;
             case MAIN_OUTPUT_STATUS:
             default:
                 update_data();
@@ -243,14 +306,8 @@ void webp_socket_event(uint8_t num, WStype_t type, uint8_t *payload, size_t len)
     case WStype_BIN:
         Serial.printf("[SOCKET][%u] get binary length: %u\n", num, len);
         hexdump(payload, len);
-        // web_socket.sendBIN(num, payload, len);
         break;
     }
-}
-
-void setup_websocket() {
-    web_socket.begin();
-    web_socket.onEvent(webp_socket_event);
 }
 
 int webserver_get_file(String path, String &return_page) {
@@ -305,6 +362,33 @@ void webserver_handle_root() {
     server.send(response_code, "text/html", index_page.c_str());
 }
 
+void setup_wifi() {
+    WiFi.begin(WIFI_SSID, WIFI_PASSWD);
+
+    Serial.printf("[SETUP] Connecting to WiFi");
+    while(WiFi.status() != WL_CONNECTED) {
+        delay(200);
+        Serial.print(".");
+    }
+    Serial.printf("\n[SETUP] Connected to '%s' IP address ", WIFI_SSID);
+    Serial.println(WiFi.localIP());
+}
+
+void setup_mdns() {
+    if (!MDNS.begin(MDNS_DOMAIN)) {
+        Serial.println("[SETUP] Error setting up MDNS responder!");
+        while(1) { delay(100); }
+    }
+
+    MDNS.addService("http", "tcp", 80);
+    Serial.printf("[SETUP] mDNS started domain '%s.local'\n", MDNS_DOMAIN);
+}
+
+void setup_websocket() {
+    web_socket.begin();
+    web_socket.onEvent(websocket_event_handler);
+}
+
 void setup_webserver() {
     Serial.println("[SETUP] loading server response from file 'index.html'");
 
@@ -324,4 +408,64 @@ void setup_fs() {
 
     uint8_t percentage_usad = (fs_info.usedBytes/fs_info.totalBytes)*100;
     Serial.printf("[SETUP] LittleFS started: spaced used %d%%\n", percentage_usad);
+}
+
+void setup() {
+    pinMode(REMOTE_LED_PIN, OUTPUT);
+    pinMode(MAIN_OUTPUT_PIN, OUTPUT);
+    pinMode(MAIN_SWITCH_INPUT_PIN, INPUT);
+
+    digitalWrite(REMOTE_LED_PIN, HIGH); // led builtin uses inverted logic
+    digitalWrite(MAIN_OUTPUT_PIN, LOW);
+
+    Serial.begin(115200);
+    Serial.setDebugOutput(false);
+    Serial.printf("\n\n\n");
+    delay(1000);
+
+    Serial.printf("[SETUP] Booting");
+    for(uint8_t i = 10; i > 0; i--) {
+        Serial.print(".");
+        Serial.flush();
+        delay(150);
+    }
+    Serial.print("\n");
+
+    setup_wifi();
+    setup_fs();
+    setup_websocket();
+    setup_mdns();
+    setup_webserver();
+
+    configTime(MY_TZ, MY_NTP_SERVER); // configure builtin ntp!
+    settimeofday_cb(show_time);       // ntp update callback
+
+    show_time();
+    read_timer_values_from_file();
+}
+
+void loop() {
+    t = millis();
+
+    if((t - main_output_dt) > MAIN_SWITCH_REPEAT_TIME) {
+        if(digitalRead(MAIN_SWITCH_INPUT_PIN)) {
+            main_output_dt = millis();
+            digitalWrite(MAIN_OUTPUT_PIN, main_output_enabled ^= 1);
+            if(timer_enabled) {
+                timer_enabled = 0;
+            }
+            update_all_clients_checkbox();
+        }
+    }
+
+    // update `system_time` every 5s
+    if((t - system_time_dt) > 5000){
+        system_time_dt = millis();
+        time(&system_time); // read the current time
+        update_timer_output();
+    }
+
+    MDNS.update();
+    web_socket.loop();
+    server.handleClient();
 }

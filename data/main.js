@@ -36,7 +36,7 @@ function rssi_to_percentage(rssi) {
 
 function update_checkbox() {
     main_checkbox.setAttribute("checked", received_data["main-output-enabled"]);
-    timer_checkbox.setAttribute("checked", received_data["timer-enabled"]);
+    timer_checkbox.setAttribute("checked", received_data["timer"]["enabled"]);
 }
 
 function update_time() {
@@ -47,9 +47,10 @@ function update_time() {
 }
 
 function update_timer() {
-    console.log(received_data);
-    from_time.value = received_data["from-time"];
-    to_time.value = received_data["to-time"];
+    from_time.value = received_data["timer"]["from"]["hour"] + ":"
+        + received_data["timer"]["from"]["minute"];
+    to_time.value = received_data["timer"]["to"]["hour"] + ":"
+        + received_data["timer"]["to"]["minute"];
 }
 
 function update_all() {
@@ -124,7 +125,6 @@ function timer_set_time() {
     query_json.to = new Object();
     query_json.to.hour = to_time.value.slice(0, 2);
     query_json.to.minute = to_time.value.slice(3, 5);
-    console.log(query_json);
 
     socket.send(query_types["TIMER_SET_VALUES"] + JSON.stringify(query_json));
 }

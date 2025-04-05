@@ -61,3 +61,7 @@ Finally upload the files to the filesystem of the board
 ```console
 $ pio run -t uploadfs
 ```
+
+## LICENSE
+
+[MIT](./LICENSE)
